@@ -220,7 +220,50 @@ const getAllVideos = asyncHandler(async (req , res)=>{
   .json(new ApiResponse(200 , videos , "videos fetched successfully"))
 })
 
+const getVideosByUserName = asyncHandler(async (req , res)=> {
+  const {page = 1 , limit = 10} = req.query ;
+  const {userName} = req.params ;
+
+  const user = await User.findOne({
+    userName : userName.toLowerCase()
+  })
+
+  if(!user){
+    throw new ApiError(
+      404 , 
+      "user with username " + userName + " does not exist "
+    )
+  }
+
+  const userID = user._id ;
+
+  const videoAggregation = Video.aggregate([
+    {
+      $match : {
+        owner : new mongoose.Types.ObjectId(userID)
+      }
+    },
+    ...vidoeCommanAggregation(req)
+  ])
+
+  const videos = await Video.aggregatePaginate(
+    videoAggregation ,
+    getmongoosePaginationOptions({
+      page ,
+      limit ,
+      customLables : {
+        totalvideos : "totalVideos",
+        videos : "videos"
+      }
+    })
+  )
+
+  return res
+  .status(200)
+  .json(new ApiResponse(200 , videos , "User Videos fetched Successfully"))
+})
+
+ 
 
 
-
-export {uploadVideo , updateVideo , getAllVideos}
+export {uploadVideo , updateVideo , getAllVideos , getVideosByUserName}
