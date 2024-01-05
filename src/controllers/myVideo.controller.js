@@ -263,7 +263,77 @@ const getVideosByUserName = asyncHandler(async (req , res)=> {
   .json(new ApiResponse(200 , videos , "User Videos fetched Successfully"))
 })
 
- 
+const getVideoByTitle = asyncHandler(async(req , res)=>{
+  const {title} = req.params ;
 
+  const Foundedvideo = await Video.findOne({
+    title : title
+  })
 
-export {uploadVideo , updateVideo , getAllVideos , getVideosByUserName}
+  if(!Foundedvideo){
+    throw new ApiError(404 , "video this title not found")
+  }
+
+  const video = await Video.aggregate([
+    {
+      $match : {
+        title : title
+      }
+    },
+  ...vidoeCommanAggregation(req)
+  ]
+  )
+
+  return res
+  .status(200)
+  .json(new ApiResponse(200 , video[0] ,"video fetched successfully" ))
+})
+
+const getMyVideos  = asyncHandler(async(req , res)=>{
+  const {page = 1 , limit = 10} = req.query ;
+  
+  const videoAggregation = Video.aggregate([
+    {
+      $match : {
+        owner : new mongoose.Types.ObjectId(req.user?._id)
+      }
+    } ,
+    ...vidoeCommanAggregation(req)
+  ])
+
+  const videos = await Video.aggregatePaginate(
+    videoAggregation ,
+    getmongoosePaginationOptions({
+      page ,
+      limit ,
+      customLables : {
+        totalVideos : "totalVideos",
+        videos : "videos"
+      }
+    })
+  )
+
+  return res
+  .status(200)
+  .json(new ApiResponse(200 , videos , " my videos fetched successfully"))
+})
+
+const deleteVideo = asyncHandler(async(req , res)=>{
+  const {videoID} = req.params ;
+
+  const video = await Video.findOneAndDelete({
+    _id : videoID ,
+    owner : req.user._id 
+  })
+
+  if(!video){
+    throw new ApiError(404 , "Video does not exist")
+  }
+
+  return res 
+  .status(200)
+  .json(new ApiResponse(200 , {} ,"video deleted Sucessfully"))
+
+})
+
+export {uploadVideo , updateVideo , getAllVideos , getVideosByUserName , getVideoByTitle , getMyVideos , deleteVideo}
