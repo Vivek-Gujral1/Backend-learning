@@ -197,6 +197,10 @@ const updateVideo = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, aggregateVideo[0], "video update successfully"));
 });
 
+const getVideos = asyncHandler(async (req , res)=>{
+  
+})
+
 const getVideosBySearchInput = asyncHandler(async (req, res) => {
   const {
     page = 1,
@@ -221,11 +225,12 @@ const getVideosBySearchInput = asyncHandler(async (req, res) => {
       },
     },
   ]);
-  console.log(owner);
+  
 
-  let OwnerVideos;
+  let OwnerVideos = [];
 
-  if (owner.length) {
+  if (!owner.length == 0) {
+    // we got only one owner beacuse there is every user has unique username
     const ownerID = owner[0]._id;
 
     OwnerVideos = await Video.aggregate([
@@ -246,10 +251,11 @@ const getVideosBySearchInput = asyncHandler(async (req, res) => {
     },
     ...videoCommanAggregation(req),
   ]);
+// if there has no TitleVideos then it is empty array ( TitleVideos = [])
+ 
+ const FinalVideos = [...OwnerVideos , ...TitleVideos]
 
-  const FinalVideos = [...OwnerVideos, ...TitleVideos];
-
-  console.log(FinalVideos);
+ 
 
   return res
     .status(200)

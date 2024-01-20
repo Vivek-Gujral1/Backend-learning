@@ -5,6 +5,7 @@ import {ApiResponse} from "../utils/ApiResponse.js"
 import {ApiError} from "../utils/ApiError.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {tweets} from "../models/tweet.model.js"
+import mongoose from "mongoose"
 
 const toggleVideoLike  = asyncHandler(async (req , res)=>{
      const {videoID} = req.params ;
@@ -120,4 +121,24 @@ const toggleTweetLike = asyncHandler(async (req , res)=>{
   .json(new ApiResponse(200 , {isLiked : true} , "tweet liked successfully"))
 })
 
-export {toggleVideoLike , toggleCommentLike , toggleTweetLike}
+const getLikedVides  = asyncHandler(async (req, res)=>{
+    const user = req.user?._id
+
+    const videos = await likes.aggregate([
+        {
+            $match : {
+                likedBy : new mongoose.Types.ObjectId(user),
+                commentID : null , 
+                tweetID : null
+            }
+        }
+    ])
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200 , videos , "liked videos fetched successfully"))
+})
+
+
+
+export {toggleVideoLike , toggleCommentLike , toggleTweetLike , getLikedVides}
